@@ -26,6 +26,7 @@ Fine-tune the following settings if needed:
 - **Name Field**: Position, size, and alignment (default: bottom center)
 
 Default settings are optimized for the standard template.
+![Adjustments](https://i.ibb.co/2Y6ZN74d/Screenshot-2026-03-29-191326.png)
 
 ### Step 3: Paste Names List
 Enter your data in the textarea with the following format:
