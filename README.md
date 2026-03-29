@@ -1,4 +1,4 @@
-# Student Volunteer Duty Book Generator
+# Automated PDF Generator
 
 A web-based PDF generation system that creates personalized duty books using a fixed template design.
 
@@ -142,4 +142,5 @@ The system replaces only two dynamic fields:
 
 ## License
 
-Free to use for educational and personal purposes.
+This project is licensed under the GNU GPL v3 License.
+![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)
