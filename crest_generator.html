@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Volunteer Duty Book Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+
+        .upload-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px dashed #667eea;
+        }
+
+        .upload-section h3 {
+            color: #555;
+            margin-bottom: 15px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-label {
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            display: inline-block;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .file-input-label:hover {
+            background: #5568d3;
+        }
+
+        .template-preview {
+            margin-top: 15px;
+            max-width: 300px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .template-preview img {
+            width: 100%;
+            height: auto;
+            border-radius: 6px;
+        }
+
+        .input-section {
+            margin-bottom: 30px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #555;
+            font-size: 1.1em;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .hint {
+            margin-top: 8px;
+            font-size: 0.9em;
+            color: #666;
+            font-style: italic;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-generate {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-generate:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-generate:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-download-all {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            display: none;
+        }
+
+        .btn-download-all:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(245, 87, 108, 0.4);
+        }
+
+        .btn-download-all:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-download-combined {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            display: none;
+        }
+
+        .btn-download-combined:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+        }
+
+        .btn-download-combined:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status-message {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            font-weight: bold;
+        }
+
+        .status-message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .download-section {
+            display: none;
+        }
+
+        .download-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .pdf-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .pdf-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            transition: all 0.3s;
+        }
+
+        .pdf-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .pdf-name {
+            font-weight: 500;
+            color: #333;
+            flex: 1;
+            margin-right: 10px;
+        }
+
+        .btn-download {
+            padding: 8px 20px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .btn-download:hover {
+            background: #218838;
+            transform: scale(1.05);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .settings-panel {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border: 1px solid #dee2e6;
+        }
+
+        .settings-panel h3 {
+            color: #555;
+            margin-bottom: 15px;
+        }
+
+        .setting-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .setting-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .setting-item label {
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .setting-item input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .setting-item input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📚 Student Volunteer Duty Book Generator</h1>
+
+        <div class="upload-section">
+            <h3>Step 1: Upload Template Image</h3>
+            <div class="file-input-wrapper">
+                <input type="file" id="templateFile" accept="image/*" onchange="handleTemplateUpload(event)">
+                <label for="templateFile" class="file-input-label">Choose Template Image</label>
+            </div>
+            <div class="template-preview" id="templatePreview">
+                <img id="previewImg" src="" alt="Template Preview">
+            </div>
+        </div>
+
+        <div class="settings-panel">
+            <h3>Step 2: Adjust Text Positions (Fine-tune if needed)</h3>
+            <div class="setting-row">
+                <div class="setting-item">
+                    <label>Number X Position (mm)</label>
+                    <input type="number" id="numberX" value="168" step="1">
+                </div>
+                <div class="setting-item">
+                    <label>Number Y Position (mm)</label>
+                    <input type="number" id="numberY" value="45" step="1">
+                </div>
+                <div class="setting-item">
+                    <label>Number Font Size</label>
+                    <input type="number" id="numberSize" value="60" step="1">
+                </div>
+                <div class="setting-item">
+                    <label>Number Alignment</label>
+                    <select id="numberAlign" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="left">Left</option>
+                        <option value="center">Center</option>
+                        <option value="right">Right</option>
+                    </select>
+                </div>
+            </div>
+            <div class="setting-row">
+                <div class="setting-item">
+                    <label>Name X Position (mm)</label>
+                    <input type="number" id="nameX" value="105" step="1">
+                </div>
+                <div class="setting-item">
+                    <label>Name Y Position (mm)</label>
+                    <input type="number" id="nameY" value="275" step="1">
+                </div>
+                <div class="setting-item">
+                    <label>Name Font Size</label>
+                    <input type="number" id="nameSize" value="22" step="1">
+                </div>
+                <div class="setting-item">
+                    <label>Name Alignment</label>
+                    <select id="nameAlign" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="left">Left</option>
+                        <option value="center" selected>Center</option>
+                        <option value="right">Right</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-section">
+            <label for="namesInput">Step 3: Paste Names List</label>
+            <textarea id="namesInput" placeholder="Example:&#10;01, Kasun Perera&#10;02, Nimal Silva&#10;03, Ayesha Fernando"></textarea>
+            <div class="hint">Format: Each line should contain number and name separated by a comma</div>
+        </div>
+
+        <div class="button-group">
+            <button class="btn-generate" id="generateBtn" onclick="generatePDFs()" disabled>Generate PDFs</button>
+        </div>
+
+        <div class="button-group" style="display: none;" id="downloadButtons">
+            <button class="btn-download-combined" id="downloadCombinedBtn" onclick="downloadCombinedPDF()">📄 Download as Single PDF</button>
+            <button class="btn-download-all" id="downloadAllBtn" onclick="downloadAll()">📦 Download as ZIP</button>
+        </div>
+
+        <div class="status-message" id="statusMessage"></div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Generating PDFs...</p>
+        </div>
+
+        <div class="download-section" id="downloadSection">
+            <h2>Generated PDFs</h2>
+            <div class="pdf-list" id="pdfList"></div>
+        </div>
+    </div>
+
+    <script>
+        const { jsPDF } = window.jspdf;
+        let generatedPDFs = [];
+        let generatedPages = []; // Store page data for combined PDF
+        let templateImageData = null;
+        let lastSettings = null; // Store settings for combined PDF generation
+
+        function handleTemplateUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                templateImageData = e.target.result;
+
+                // Show preview
+                const preview = document.getElementById('templatePreview');
+                const previewImg = document.getElementById('previewImg');
+                previewImg.src = templateImageData;
+                preview.style.display = 'block';
+
+                // Enable generate button
+                document.getElementById('generateBtn').disabled = false;
+
+                showStatus('Template uploaded successfully!', 'success');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function showStatus(message, type) {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.textContent = message;
+            statusEl.className = `status-message ${type}`;
+            statusEl.style.display = 'block';
+
+            setTimeout(() => {
+                statusEl.style.display = 'none';
+            }, 5000);
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+
+        async function generatePDFs() {
+            const input = document.getElementById('namesInput').value.trim();
+
+            if (!input) {
+                showStatus('Please enter at least one name!', 'error');
+                return;
+            }
+
+            if (!templateImageData) {
+                showStatus('Please upload a template image first!', 'error');
+                return;
+            }
+
+            showLoading(true);
+            generatedPDFs = [];
+            generatedPages = [];
+
+            const lines = input.split('\n').filter(line => line.trim());
+            let successCount = 0;
+            let skipCount = 0;
+
+            // Get settings
+            const numberX = parseFloat(document.getElementById('numberX').value);
+            const numberY = parseFloat(document.getElementById('numberY').value);
+            const numberSize = parseFloat(document.getElementById('numberSize').value);
+            const numberAlign = document.getElementById('numberAlign').value;
+
+            const nameX = parseFloat(document.getElementById('nameX').value);
+            const nameY = parseFloat(document.getElementById('nameY').value);
+            const nameSize = parseFloat(document.getElementById('nameSize').value);
+            const nameAlign = document.getElementById('nameAlign').value;
+
+            // Store settings for combined PDF generation
+            lastSettings = {
+                numberX, numberY, numberSize, numberAlign,
+                nameX, nameY, nameSize, nameAlign
+            };
+
+            for (const line of lines) {
+                const parts = line.split(',').map(p => p.trim());
+
+                if (parts.length < 2 || !parts[0] || !parts[1]) {
+                    skipCount++;
+                    continue;
+                }
+
+                const number = parts[0];
+                const name = parts[1];
+
+                try {
+                    const pdfBlob = await createPDF(number, name, {
+                        numberX, numberY, numberSize, numberAlign,
+                        nameX, nameY, nameSize, nameAlign
+                    });
+                    generatedPDFs.push({
+                        filename: `${number} - ${name}.pdf`,
+                        blob: pdfBlob,
+                        number: number,
+                        name: name
+                    });
+
+                    // Store page data for combined PDF
+                    generatedPages.push({
+                        number: number,
+                        name: name
+                    });
+
+                    successCount++;
+                } catch (error) {
+                    console.error('Error generating PDF:', error);
+                    skipCount++;
+                }
+            }
+
+            showLoading(false);
+
+            if (successCount > 0) {
+                let message = `${successCount} PDFs generated successfully!`;
+                if (skipCount > 0) {
+                    message += ` (${skipCount} lines skipped)`;
+                }
+                showStatus(message, 'success');
+                displayPDFs();
+
+                // Show download buttons
+                const downloadButtonsDiv = document.getElementById('downloadButtons');
+                downloadButtonsDiv.style.display = 'flex';
+                document.getElementById('downloadCombinedBtn').style.display = 'block';
+                document.getElementById('downloadAllBtn').style.display = 'block';
+            } else {
+                showStatus('No valid entries found!', 'error');
+            }
+        }
+
+        async function createPDF(number, name, settings) {
+            return new Promise((resolve, reject) => {
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+
+                const img = new Image();
+                img.src = templateImageData;
+
+                img.onload = function() {
+                    // Add template as background (full A4 size)
+                    pdf.addImage(img, 'PNG', 0, 0, 210, 297);
+
+                    // Add number (top-right corner)
+                    pdf.setFont('times', 'bold');
+                    pdf.setFontSize(settings.numberSize);
+                    pdf.setTextColor(0, 0, 0);
+                    pdf.text(number, settings.numberX, settings.numberY, { align: settings.numberAlign });
+
+                    // Add name (bottom center)
+                    pdf.setFont('times', 'normal');
+                    pdf.setFontSize(settings.nameSize);
+                    pdf.text(name, settings.nameX, settings.nameY, { align: settings.nameAlign });
+
+                    // Convert to blob
+                    const pdfBlob = pdf.output('blob');
+                    resolve(pdfBlob);
+                };
+
+                img.onerror = function() {
+                    reject(new Error('Failed to load template image'));
+                };
+            });
+        }
+
+        function displayPDFs() {
+            const pdfList = document.getElementById('pdfList');
+            pdfList.innerHTML = '';
+
+            generatedPDFs.forEach((pdf, index) => {
+                const item = document.createElement('div');
+                item.className = 'pdf-item';
+                item.innerHTML = `
+                    <span class="pdf-name">${pdf.filename}</span>
+                    <button class="btn-download" onclick="downloadPDF(${index})">Download</button>
+                `;
+                pdfList.appendChild(item);
+            });
+
+            document.getElementById('downloadSection').style.display = 'block';
+        }
+
+        function downloadPDF(index) {
+            const pdf = generatedPDFs[index];
+            const url = URL.createObjectURL(pdf.blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = pdf.filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        async function downloadAll() {
+            if (generatedPDFs.length === 0) {
+                showStatus('No PDFs to download!', 'error');
+                return;
+            }
+
+            showLoading(true);
+
+            const zip = new JSZip();
+
+            generatedPDFs.forEach(pdf => {
+                zip.file(pdf.filename, pdf.blob);
+            });
+
+            try {
+                const content = await zip.generateAsync({ type: 'blob' });
+                saveAs(content, 'Student_Duty_Books.zip');
+                showStatus('ZIP file downloaded successfully!', 'success');
+            } catch (error) {
+                showStatus('Error creating ZIP file!', 'error');
+                console.error(error);
+            }
+
+            showLoading(false);
+        }
+
+        async function downloadCombinedPDF() {
+            if (generatedPages.length === 0) {
+                showStatus('No PDFs to combine!', 'error');
+                return;
+            }
+
+            showLoading(true);
+
+            try {
+                // Create a new PDF document
+                const combinedPDF = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+
+                // Load the template image once
+                const img = new Image();
+                img.src = templateImageData;
+
+                await new Promise((resolve, reject) => {
+                    img.onload = resolve;
+                    img.onerror = reject;
+                });
+
+                // Add each page to the combined PDF
+                for (let i = 0; i < generatedPages.length; i++) {
+                    const pageData = generatedPages[i];
+
+                    // Add new page (except for the first one)
+                    if (i > 0) {
+                        combinedPDF.addPage('a4', 'portrait');
+                    }
+
+                    // Add template as background (full A4 size)
+                    combinedPDF.addImage(img, 'PNG', 0, 0, 210, 297);
+
+                    // Add number (top-right corner)
+                    combinedPDF.setFont('times', 'bold');
+                    combinedPDF.setFontSize(lastSettings.numberSize);
+                    combinedPDF.setTextColor(0, 0, 0);
+                    combinedPDF.text(
+                        pageData.number,
+                        lastSettings.numberX,
+                        lastSettings.numberY,
+                        { align: lastSettings.numberAlign }
+                    );
+
+                    // Add name (bottom center)
+                    combinedPDF.setFont('times', 'normal');
+                    combinedPDF.setFontSize(lastSettings.nameSize);
+                    combinedPDF.text(
+                        pageData.name,
+                        lastSettings.nameX,
+                        lastSettings.nameY,
+                        { align: lastSettings.nameAlign }
+                    );
+                }
+
+                // Download the combined PDF
+                combinedPDF.save('All Students.pdf');
+                showStatus('Combined PDF downloaded successfully!', 'success');
+            } catch (error) {
+                showStatus('Error creating combined PDF!', 'error');
+                console.error(error);
+            }
+
+            showLoading(false);
+        }
+    </script>
+</body>
+</html>
